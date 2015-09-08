@@ -28,6 +28,29 @@
 /*max3: o valor maximo de uma tripla x, y e z*/
 #define max3(x,y,z) ((x > y) && (x > z)) ? x : ((y > z) ? y : z)
 
+int** alloccharmtx(int i, int j)
+{
+    int **ret;
+    ret = (int **) calloc (i, sizeof(int*));
+    int c;
+    for (c = 0; c < i; c++)
+        ret[c] = (int *) calloc(j, sizeof(int));
+
+    return ret;
+}
+
+void freemtx(int **m, int i)
+{
+    int c;
+    for (c = 0; c < i; c++)
+        if (c < i)
+            free(m[c]);
+    free(m);
+}
+
+/*!
+    Função para verificar se a cadeia c contem apenas os caracteres representando os Nucleotideos.
+*/
 int p1_valida_cadeia (char *c)
 {
     if (c)
@@ -45,25 +68,6 @@ int p1_valida_cadeia (char *c)
     return 0;
 }
 
-char** alloccharmtx(int i,int j)
-{
-    char **ret;
-    ret = (char **) calloc (i, sizeof(char*));
-    int c;
-    for (c = 0; c < i; c++)
-        ret[c] = (char *) calloc(j, sizeof(char));
-
-    return ret;
-}
-
-void freemtx(char **m, int i)
-{
-    int c;
-    for (c = 0; c < i; c++)
-        free(m[c]);
-    free(m);
-}
-
 /*!
     Função para encontrar o melhor alinhamento entre as cadeias s e t,
     dado que s e t sejam cadeias validas de nucleotideos (a,c,g,t).
@@ -72,12 +76,12 @@ void freemtx(char **m, int i)
     @param t ponteiro para a cadeia t, a ser alinhada com s
     @return TODO
 */
-void p1_alinhar_s_t (char *s, char *t)
+void p1_alinhar_s_t (char *s, char *t, char **als, char **alt)
 {
     int slen, tlen, lignlen;
-    int i, j, k, l, maxij, diagv, esqv, cimav;
+    int i, j, k, maxij, diagv, esqv, cimav;
     char dir;
-    char **m, **mdir;
+    int **m, **mdir;
     char *slign, *tlign;
     int mrows, mcols;
 
@@ -106,9 +110,9 @@ void p1_alinhar_s_t (char *s, char *t)
     for (i = 1; i < mrows; i++)
         for (j = 1; j < mcols; j++)
         {
-            esqv = m[i][j-1] + SCR_I;
+            esqv = m[i][j-1] + SCR_R;
             diagv = (s[j-1] == t[i-1]) ? (m[i-1][j-1] + SCR_M) : (m[i-1][j-1] + SCR_S);
-            cimav = m[i-1][j] + SCR_R;
+            cimav = m[i-1][j] + SCR_I;
 
             maxij = max3(esqv,diagv,cimav);
 
@@ -169,6 +173,9 @@ void p1_alinhar_s_t (char *s, char *t)
 
     printf("\n%s\n%s\n\n",slign,tlign);
 
+    *als = slign;
+    *alt = tlign;
+
     for (i = 0; i < mrows; i++)
     {
         for (j = 0; j < mcols; j++)
@@ -187,6 +194,6 @@ void p1_alinhar_s_t (char *s, char *t)
         printf("\n");
     }
 
-    freemtx(m,mrows);
     freemtx(mdir,mrows);
+    freemtx(m,mrows);
 }

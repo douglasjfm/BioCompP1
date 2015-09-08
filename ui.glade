@@ -15,29 +15,31 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <child>
-              <object class="GtkVPaned" id="vpaned2">
+              <object class="GtkVBox" id="vbox3">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
+                <property name="can_focus">False</property>
                 <child>
                   <object class="GtkLabel" id="label1">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">1ª Cadeia:</property>
+                    <property name="label" translatable="yes">1ª Cadeia</property>
                   </object>
                   <packing>
-                    <property name="resize">False</property>
-                    <property name="shrink">True</property>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
                   <object class="GtkLabel" id="label2">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">2ª Cadeia:</property>
+                    <property name="label" translatable="yes">2ª Cadeia</property>
                   </object>
                   <packing>
-                    <property name="resize">True</property>
-                    <property name="shrink">True</property>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
               </object>
@@ -47,9 +49,9 @@
               </packing>
             </child>
             <child>
-              <object class="GtkVPaned" id="vpaned3">
+              <object class="GtkVBox" id="vbox4">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
+                <property name="can_focus">False</property>
                 <child>
                   <object class="GtkEntry" id="uiCadeia1">
                     <property name="visible">True</property>
@@ -61,8 +63,9 @@
                     <property name="secondary_icon_sensitive">True</property>
                   </object>
                   <packing>
-                    <property name="resize">False</property>
-                    <property name="shrink">True</property>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
@@ -76,14 +79,15 @@
                     <property name="secondary_icon_sensitive">True</property>
                   </object>
                   <packing>
-                    <property name="resize">True</property>
-                    <property name="shrink">True</property>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
               </object>
               <packing>
-                <property name="resize">False</property>
-                <property name="shrink">False</property>
+                <property name="resize">True</property>
+                <property name="shrink">True</property>
               </packing>
             </child>
           </object>
@@ -204,7 +208,7 @@
                   <object class="GtkLabel" id="uiAlignCadeia2">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">------------------------------------------------------------------------------------------------------------------------------</property>
+                    <property name="label" translatable="yes">--------------------------------------------------------------------------------------------------------------------------------</property>
                   </object>
                   <packing>
                     <property name="expand">True</property>
