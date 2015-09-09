@@ -1,8 +1,7 @@
 # depslib dependency file v1.0
-1441684870 source:/home/douglas/Documentos/BQ308/P1/main.c
+1441813973 source:/home/douglas/Documentos/BQ308/P1/main.c
 	<stdlib.h>
-	<gtk/gtk.h>
-	<gmodule.h>
+	<stdio.h>
 	<string.h>
 
 1426113922 /usr/include/gtk-2.0/gtk/gtk.h
