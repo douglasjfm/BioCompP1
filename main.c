@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "fasta.h"
+
 /*!
     @author douglas medeiros <djfm at cin.ufpe.br>
 
@@ -36,7 +38,7 @@
 #define SCR_R -6
 #define SCR_I -8
 
-/*Dierções*/
+/*Direções*/
 #define DIRSUB 0x01
 #define DIRESQ 0x02
 #define DIRDIA 0x04
