@@ -71,7 +71,9 @@ void freemtx(int **m, int i)
 }
 
 /*!
-    Função para verificar se a cadeia c contem apenas os caracteres representando os Nucleotideos.
+    Função para validar se a cadeia c contem apenas os caracteres representando os aminoacidos em minusculo
+    @param c Ponteiro para a cadeia a ser validada
+    @return um se a cadeia é válida, zero se não
 */
 int p1_valida_cadeia (char *c)
 {
@@ -82,8 +84,10 @@ int p1_valida_cadeia (char *c)
         for (i = 0; i < l; i++)
         {
             char nuc = c[i];
-            if (nuc != 'a' && nuc != 'c' && nuc != 'g' && nuc != 't' && nuc != 'u')
+            if (!((nuc >= 'a' && nuc <= 'z') || (nuc >= 'A' && nuc <= 'Z')))
                 return 0;
+            if (nuc >= 'A' && nuc <= 'Z')
+                c[i] = nuc + 32;
         }
         return 1;
     }
@@ -92,7 +96,7 @@ int p1_valida_cadeia (char *c)
 
 /*!
     Função para encontrar o melhor alinhamento entre as cadeias s e t,
-    dado que s e t sejam cadeias validas de nucleotideos (a,c,g,t).
+    dado que s e t sejam cadeias validas de aminoacidos.
 
     @param s ponteiro para a cadeia s
     @param t ponteiro para a cadeia t, a ser alinhada com s

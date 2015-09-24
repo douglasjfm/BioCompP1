@@ -35,10 +35,11 @@
 		<Linker>
 			<Add option="`pkg-config --libs gtk+-2.0 gmodule-2.0`" />
 		</Linker>
-		<Unit filename="main.c">
+		<Unit filename="fasta.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="p1.c">
+		<Unit filename="fasta.h" />
+		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Extensions>
