@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "fasta.h"
+#include "matrices.h"
 
 /*!
     @author douglas medeiros <djfm at cin.ufpe.br>
@@ -265,8 +266,27 @@ int main (int argc, char *argv[])
         }
     }
     else
-    {//Executa exemplo para depuracao
-        p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL);
+    {
+        //Executa exemplo para depuracao
+        //p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL);
+        FILE *x = fopen("tabela.txt","r"), *y = fopen("t.txt","w");
+        int d,c=0;
+        fprintf(y,"{");
+        while((fscanf(x,"%d",&d) == 1))
+        {
+            c++;
+            if (c==1) fprintf(y,"[%d, ",d);
+            else if (c==24)
+            {
+                fprintf(y,"%d],\n",d);
+                c = 0;
+            }
+            else
+            {
+                fprintf(y,"%d, ",d);
+            }
+        }
+        fprintf(y,"}");
     }
     return 0;
 }
