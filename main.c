@@ -11,7 +11,8 @@
     1) Instrucoes:
 
         comando:
-            ./P1 <cadeia 1> <cadeia 2>
+            ./P1 <cadeia 1> <cadeia 2> <tabela>
+            Onde <tabela> pode ser pam10 (default), pam120, pam250, blosum30, blosum62, blosum90;
         saída:
             P1 Console <\Nova Linha>
             Cadeias OK! <\Nova Linha>
@@ -48,8 +49,7 @@
 #define goLF(x) (x & DIRESQ)
 #define goDG(x) (x & DIRDIA)
 
-/*max3: o valor maximo de uma tripla (x, y, z)*/
-#define max3(x,y,z) ((x > y) && (x > z)) ? x : ((y > z) ? y : z)
+#define intmax(a,b) ((a > b) ? a : b)
 
 int** allocintmtx(int i, int j)
 {
@@ -71,6 +71,11 @@ void freemtx(int **m, int i)
     free(m);
 }
 
+/*!
+    Função para mapear os caracteres que representam os aminoacidos nos valores do tipo enumeracao Aminoacidos_t
+    @param a Caracter representando um aminoacido, espera-se que seja minusculo
+    @return Aminoacido_t valor da enumeração correspondente
+*/
 Aminoacidos_t getAminCode (char a)
 {
     Aminoacidos_t aminoCode;
@@ -175,7 +180,7 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt)
             diagv = (s[j-1] == t[i-1]) ? (m[i-1][j-1] + SCR_M) : (m[i-1][j-1] + SCR_S);
             cimav = m[i-1][j] + SCR_I;
 
-            maxij = max3(esqv,diagv,cimav);
+            maxij = intmax(intmax(esqv,diagv),cimav);
 
             dir = 0;
 
