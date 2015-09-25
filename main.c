@@ -71,6 +71,39 @@ void freemtx(int **m, int i)
     free(m);
 }
 
+Aminoacidos_t getAminCode (char a)
+{
+    Aminoacidos_t aminoCode;
+    switch(a)
+    {
+        case 'a' : aminoCode = A; break;
+        case 'r' : aminoCode = R; break;
+        case 'n' : aminoCode = N; break;
+        case 'd' : aminoCode = D; break;
+        case 'c' : aminoCode = C; break;
+        case 'q' : aminoCode = Q; break;
+        case 'e' : aminoCode = E; break;
+        case 'g' : aminoCode = G; break;
+        case 'h' : aminoCode = H; break;
+        case 'i' : aminoCode = I; break;
+        case 'l' : aminoCode = L; break;
+        case 'k' : aminoCode = K; break;
+        case 'm' : aminoCode = M; break;
+        case 'f' : aminoCode = F; break;
+        case 'p' : aminoCode = P; break;
+        case 's' : aminoCode = S; break;
+        case 't' : aminoCode = T; break;
+        case 'w' : aminoCode = W; break;
+        case 'y' : aminoCode = Y; break;
+        case 'v' : aminoCode = V; break;
+        case 'b' : aminoCode = B; break;
+        case 'z' : aminoCode = Z; break;
+        case 'x' : aminoCode = X; break;
+        default  : aminoCode = O; break;
+    }
+    return aminoCode;
+}
+
 /*!
     Função para validar se a cadeia c contem apenas os caracteres representando os aminoacidos em minusculo
     @param c Ponteiro para a cadeia a ser validada
@@ -254,39 +287,36 @@ int main (int argc, char *argv[])
 {
     if (argc > 2)
     {
+        FASTA *fasta1, *fasta2;
+        char *cadeia1, *cadeia2;
+        unsigned len1, len2;
+
+        fasta1 = abrirFasta(argv[1]);
+        fasta2 = abrirFasta(argv[2]);
+
+        lerFasta(fasta1,&cadeia1,NULL,&len1);
+        lerFasta(fasta2,&cadeia2,NULL,&len2);
+
         printf("P1 Console\n");
-        if (p1_valida_cadeia(argv[1]) && p1_valida_cadeia(argv[2]))
+        if (p1_valida_cadeia(cadeia1) && p1_valida_cadeia(cadeia2))
         {
             printf("Cadeias OK!\n");
-            p1_alinhar_s_t(argv[1],argv[2],NULL,NULL);
+            p1_alinhar_s_t(cadeia1,cadeia2,NULL,NULL);
         }
         else
         {
             printf("Cadeias Invalidas!\n");
         }
+
+        encerraFasta(fasta1);
+        encerraFasta(fasta2);
+        free(cadeia1);
+        free(cadeia2);
     }
     else
     {
-        //Executa exemplo para depuracao
-        //p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL);
-        FILE *x = fopen("tabela.txt","r"), *y = fopen("t.txt","w");
-        int d,c=0;
-        fprintf(y,"{");
-        while((fscanf(x,"%d",&d) == 1))
-        {
-            c++;
-            if (c==1) fprintf(y,"[%d, ",d);
-            else if (c==24)
-            {
-                fprintf(y,"%d],\n",d);
-                c = 0;
-            }
-            else
-            {
-                fprintf(y,"%d, ",d);
-            }
-        }
-        fprintf(y,"}");
+        /* Executa exemplo para depuracao */
+        p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL);
     }
     return 0;
 }

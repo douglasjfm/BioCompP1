@@ -1,18 +1,12 @@
-/* fasta.h
- * Declarations for simple FASTA i/o library
- * SRE, Sun Sep  8 05:37:38 2002 [AA2721, transatlantic]
- * CVS $Id: fasta.h,v 1.1 2003/10/05 18:43:39 eddy Exp $
- */
-
 #include <stdio.h>
 
-#define FASTA_MAXLINE 512	/* Requires FASTA file lines to be <512 characters */
+#define FASTA_MAXLEN 512	/* Limite de caracteres em uma linha do FASTA */
 
 typedef struct fastafile_s {
   FILE *fp;
-  char  buffer[FASTA_MAXLINE];
-} FASTAFILE;
+  char  buffer[FASTA_MAXLEN];
+} FASTA;
 
-extern FASTAFILE *OpenFASTA(char *seqfile);
-extern int        ReadFASTA(FASTAFILE *fp, char **ret_seq, char **ret_name, int *ret_L);
-extern void       CloseFASTA(FASTAFILE *ffp);
+extern FASTA *abrirFasta(char *seqfile);
+extern int    lerFasta(FASTA *fp, char **ret_seq, char **ret_name, unsigned *ret_L);
+extern void   encerraFasta(FASTA *ffp);
