@@ -71,6 +71,38 @@ void freemtx(int **m, int i)
     free(m);
 }
 
+_int8 **escolherTabela(char *opt)
+{
+    if (strcpy(opt,"pam120") == 0)
+    {
+        printf("Tabela: pam120\n");
+        return pam120;
+    }
+    if (strcpy(opt,"pam250") == 0)
+    {
+        printf("Tabela: pam250\n");
+        return pam250;
+    }
+    if (strcpy(opt,"blosum30") == 0)
+    {
+        printf("Tabela: blosum30\n");
+        return blosum30;
+    }
+    if (strcpy(opt,"blosum62") == 0)
+    {
+        printf("Tabela: blosum62\n");
+        return blosum62;
+    }
+    if (strcpy(opt,"blosum90") == 0)
+    {
+        printf("Tabela: blosum90\n");
+        return blosum90;
+    }
+
+    printf("Tabela default: pam10\n");
+    return pam10;
+}
+
 /*!
     Função para mapear os caracteres que representam os aminoacidos nos valores do tipo enumeracao Aminoacidos_t
     @param a Caracter representando um aminoacido, espera-se que seja minusculo
@@ -134,51 +166,54 @@ int p1_valida_cadeia (char *c)
 }
 
 /*!
-    Função para encontrar o melhor alinhamento entre as cadeias s e t,
+    Função para encontrar o melhor alinhamento local entre as cadeias s e t,
     dado que s e t sejam cadeias validas de aminoacidos.
 
     @param s ponteiro para a cadeia s
     @param t ponteiro para a cadeia t, a ser alinhada com s
     @param als referencia para retornar a cadeia s alinhada
     @param alt referencia para retornar a cadeia t alinhada
+    @param tab Matriz 24x24 representando a funcao de substituicao (pam10, blosum30...)
 */
-void p1_alinhar_s_t (char *s, char *t, char **als, char **alt)
+void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 **tab)
 {
     int slen, tlen, lignlen;
     int i, j, k, maxij, diagv, esqv, cimav, globalscr;
     char dir;
-    int **m, **mdir;
+    int **a, **b, **c, **mdir;
     char *slign, *tlign;
     int mrows, mcols;
 
-    /*Alocação e  inicialização da matriz de scores*/
+    /* Alocação e  inicialização da matriz de scores */
     slen = strlen(s);
     tlen = strlen(t);
 
     mrows = tlen + 1;
     mcols = slen + 1;
 
-    m = allocintmtx(mrows,mcols);
+    a = allocintmtx(mrows,mcols);
+    b = allocintmtx(mrows,mcols);
+    c = allocintmtx(mrows,mcols);
     mdir = allocintmtx(mrows,mcols);
+
+    a[0][0] = 0;
 
     for (i = 1; i < mcols; i++)
     {
-        m[0][i] = i * SCR_R;
-        mdir[0][i] = DIRESQ;
+        b[0][i] = 0;
     }
 
     for (i = 1; i < mrows; i++)
     {
-        m[i][0] = i * SCR_I;
-        mdir[i][0] = DIRSUB;
+        c[i][0] = i * SCR_I;
     }
 
     for (i = 1; i < mrows; i++)
         for (j = 1; j < mcols; j++)
         {
-            esqv = m[i][j-1] + SCR_R;
-            diagv = (s[j-1] == t[i-1]) ? (m[i-1][j-1] + SCR_M) : (m[i-1][j-1] + SCR_S);
-            cimav = m[i-1][j] + SCR_I;
+            esqv = a[i][j-1] + SCR_R;
+            diagv = (s[j-1] == t[i-1]) ? (a[i-1][j-1] + SCR_M) : (a[i-1][j-1] + SCR_S);
+            cimav = a[i-1][j] + SCR_I;
 
             maxij = intmax(intmax(esqv,diagv),cimav);
 
@@ -192,7 +227,7 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt)
                 dir = dir | DIRDIA;
 
             mdir[i][j] = dir;
-            m[i][j] = maxij;
+            a[i][j] = maxij;
         }
 
     /*Alocação das strings s e t alinhadas*/
@@ -217,7 +252,7 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt)
     do
     {
         dir = mdir[i][j];
-        globalscr += m[i][j];
+        globalscr += a[i][j];
 
         /*Caminha no traceback segundo a prioridade das operacoes*/
         if (goDG(dir))
@@ -285,7 +320,9 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt)
 //    }
 
     freemtx(mdir,mrows);
-    freemtx(m,mrows);
+    freemtx(a,mrows);
+    freemtx(b,mrows);
+    freemtx(c,mrows);
 }
 
 int main (int argc, char *argv[])
@@ -305,8 +342,10 @@ int main (int argc, char *argv[])
         printf("P1 Console\n");
         if (p1_valida_cadeia(cadeia1) && p1_valida_cadeia(cadeia2))
         {
+            _int8 **tabela;
             printf("Cadeias OK!\n");
-            p1_alinhar_s_t(cadeia1,cadeia2,NULL,NULL);
+            if (argc > 3) tabela = escolherTabela(argv[3]);
+            p1_alinhar_s_t(cadeia1,cadeia2,NULL,NULL,tabela);
         }
         else
         {
@@ -321,7 +360,7 @@ int main (int argc, char *argv[])
     else
     {
         /* Executa exemplo para depuracao */
-        p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL);
+        p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL,pam10);
     }
     return 0;
 }
