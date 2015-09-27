@@ -45,9 +45,17 @@
 #define DIRESQ 0x02
 #define DIRDIA 0x04
 
+#define DIR_A 0x20
+#define DIR_B 0x40
+#define DIR_C 0x80
+
 #define goUP(x) (x & DIRSUB)
 #define goLF(x) (x & DIRESQ)
 #define goDG(x) (x & DIRDIA)
+
+#define goA(x) (x & DIR_A)
+#define goB(x) (x & DIR_B)
+#define goC(x) (x & DIR_C)
 
 #define intmax(a,b) ((a > b) ? a : b)
 
@@ -71,36 +79,46 @@ void freemtx(int **m, int i)
     free(m);
 }
 
-_int8 **escolherTabela(char *opt)
+int escolherTabela(char *opt)
 {
     if (strcpy(opt,"pam120") == 0)
     {
         printf("Tabela: pam120\n");
-        return pam120;
+        return 1;
     }
     if (strcpy(opt,"pam250") == 0)
     {
         printf("Tabela: pam250\n");
-        return pam250;
+        return 2;
     }
     if (strcpy(opt,"blosum30") == 0)
     {
         printf("Tabela: blosum30\n");
-        return blosum30;
+        return 3;
     }
     if (strcpy(opt,"blosum62") == 0)
     {
         printf("Tabela: blosum62\n");
-        return blosum62;
+        return 4;
     }
     if (strcpy(opt,"blosum90") == 0)
     {
         printf("Tabela: blosum90\n");
-        return blosum90;
+        return 5;
     }
 
     printf("Tabela default: pam10\n");
-    return pam10;
+    return 0;
+}
+
+int gappen (int k, _int8 tab[24][24])
+{
+    int g = tab[0][23];
+    if (k > 1)
+        return (2 * g + g * (k - 1));
+    if (k == 1)
+        return 2 * g;
+    return 0;
 }
 
 /*!
@@ -113,30 +131,78 @@ Aminoacidos_t getAminCode (char a)
     Aminoacidos_t aminoCode;
     switch(a)
     {
-        case 'a' : aminoCode = A; break;
-        case 'r' : aminoCode = R; break;
-        case 'n' : aminoCode = N; break;
-        case 'd' : aminoCode = D; break;
-        case 'c' : aminoCode = C; break;
-        case 'q' : aminoCode = Q; break;
-        case 'e' : aminoCode = E; break;
-        case 'g' : aminoCode = G; break;
-        case 'h' : aminoCode = H; break;
-        case 'i' : aminoCode = I; break;
-        case 'l' : aminoCode = L; break;
-        case 'k' : aminoCode = K; break;
-        case 'm' : aminoCode = M; break;
-        case 'f' : aminoCode = F; break;
-        case 'p' : aminoCode = P; break;
-        case 's' : aminoCode = S; break;
-        case 't' : aminoCode = T; break;
-        case 'w' : aminoCode = W; break;
-        case 'y' : aminoCode = Y; break;
-        case 'v' : aminoCode = V; break;
-        case 'b' : aminoCode = B; break;
-        case 'z' : aminoCode = Z; break;
-        case 'x' : aminoCode = X; break;
-        default  : aminoCode = O; break;
+    case 'a' :
+        aminoCode = A;
+        break;
+    case 'r' :
+        aminoCode = R;
+        break;
+    case 'n' :
+        aminoCode = N;
+        break;
+    case 'd' :
+        aminoCode = D;
+        break;
+    case 'c' :
+        aminoCode = C;
+        break;
+    case 'q' :
+        aminoCode = Q;
+        break;
+    case 'e' :
+        aminoCode = E;
+        break;
+    case 'g' :
+        aminoCode = G;
+        break;
+    case 'h' :
+        aminoCode = H;
+        break;
+    case 'i' :
+        aminoCode = I;
+        break;
+    case 'l' :
+        aminoCode = L;
+        break;
+    case 'k' :
+        aminoCode = K;
+        break;
+    case 'm' :
+        aminoCode = M;
+        break;
+    case 'f' :
+        aminoCode = F;
+        break;
+    case 'p' :
+        aminoCode = P;
+        break;
+    case 's' :
+        aminoCode = S;
+        break;
+    case 't' :
+        aminoCode = T;
+        break;
+    case 'w' :
+        aminoCode = W;
+        break;
+    case 'y' :
+        aminoCode = Y;
+        break;
+    case 'v' :
+        aminoCode = V;
+        break;
+    case 'b' :
+        aminoCode = B;
+        break;
+    case 'z' :
+        aminoCode = Z;
+        break;
+    case 'x' :
+        aminoCode = X;
+        break;
+    default  :
+        aminoCode = O;
+        break;
     }
     return aminoCode;
 }
@@ -165,6 +231,22 @@ int p1_valida_cadeia (char *c)
     return 0;
 }
 
+int maxmtx (int **arr, int m, int n, int* i, int* j)
+{
+    int k,l,bf = 0;
+    *i = 0;
+    *j = 0;
+    for (k = 0; k < m; k++)
+        for (l = 0; l < n; l++)
+            if (arr[k][l] > bf)
+            {
+                bf = arr[k][l];
+                *i = k;
+                *j = l;
+            }
+    return bf;
+}
+
 /*!
     Função para encontrar o melhor alinhamento local entre as cadeias s e t,
     dado que s e t sejam cadeias validas de aminoacidos.
@@ -175,16 +257,18 @@ int p1_valida_cadeia (char *c)
     @param alt referencia para retornar a cadeia t alinhada
     @param tab Matriz 24x24 representando a funcao de substituicao (pam10, blosum30...)
 */
-void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 **tab)
+void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24])
 {
     int slen, tlen, lignlen;
-    int i, j, k, maxij, diagv, esqv, cimav, globalscr;
+    int i, j, k, x, y, maxij, diagv, esqv, cimav, globalscr;
     char dir;
     int **a, **b, **c, **mdir;
     char *slign, *tlign;
     int mrows, mcols;
 
-    /* Alocação e  inicialização da matriz de scores */
+    /* Alocação e  inicialização das matrizes a,b e c */
+    /* Obs.: calloc() ja inicializa com zero, conveniente para o caso de alinhamento local apenas */
+
     slen = strlen(s);
     tlen = strlen(t);
 
@@ -196,39 +280,38 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 **tab)
     c = allocintmtx(mrows,mcols);
     mdir = allocintmtx(mrows,mcols);
 
-    a[0][0] = 0;
+    /* iteracao */
+    i = 0; //Indice da cadeia t
+    j = 0; //Indice da cadeia s
+    k = 0; //Indice para blocos maiores que 1
+    x = y = 1; //Indices para as matrizes
 
-    for (i = 1; i < mcols; i++)
+    while (x < mrows && y < mcols)
     {
-        b[0][i] = 0;
+        a[x][y] = tab[getAminCode(s[i]) + 0][getAminCode(t[j]) + 0] + intmax(a[x-1][y-1],intmax(b[x-1][y-1],c[x-1][y-1]));
+
+        k = 0;
+        b[x][y] = intmax(a[x][y - k] + gappen(k,tab),c[x][y - k] + gappen(k,tab));
+        for (k = 1; k <= y; k++)
+            if (((a[x][y - k] + gappen(k,tab)) > b[x][y]) || ((c[x][y - k] + gappen(k,tab)) > b[x][y]))
+                b[x][y] = intmax(a[x][y - k],c[x][y - k]);
+
+        k = 0;
+        c[x][y] = intmax(a[x - k][y] + gappen(k,tab),b[x - k][y] + gappen(k,tab));
+        for (k = 1; k <= y; k++)
+            if (((a[x - k][y] + gappen(k,tab)) > c[x][y]) || ((b[x - k][y] + gappen(k,tab)) > c[x][y]))
+                c[x][y] = intmax(a[x - k][y],b[x - k][y]);
+
+        maxij = intmax(a[x][y],intmax(b[x][y],c[x][y]));
+
+        if (maxij == a[x][y]) mdir[x][y] = DIR_A;
+        else if (maxij == b[x][y]) mdir[x][y] = DIR_B;
+        else mdir[x][y] = DIR_C;
+
+        x++;y++;
+        i++;j++;
+
     }
-
-    for (i = 1; i < mrows; i++)
-    {
-        c[i][0] = i * SCR_I;
-    }
-
-    for (i = 1; i < mrows; i++)
-        for (j = 1; j < mcols; j++)
-        {
-            esqv = a[i][j-1] + SCR_R;
-            diagv = (s[j-1] == t[i-1]) ? (a[i-1][j-1] + SCR_M) : (a[i-1][j-1] + SCR_S);
-            cimav = a[i-1][j] + SCR_I;
-
-            maxij = intmax(intmax(esqv,diagv),cimav);
-
-            dir = 0;
-
-            if (maxij == esqv)
-                dir = DIRESQ;
-            if (maxij == cimav)
-                dir = dir | DIRSUB;
-            if (maxij == diagv)
-                dir = dir | DIRDIA;
-
-            mdir[i][j] = dir;
-            a[i][j] = maxij;
-        }
 
     /*Alocação das strings s e t alinhadas*/
 
@@ -342,10 +425,10 @@ int main (int argc, char *argv[])
         printf("P1 Console\n");
         if (p1_valida_cadeia(cadeia1) && p1_valida_cadeia(cadeia2))
         {
-            _int8 **tabela;
+            int subst = 0;
             printf("Cadeias OK!\n");
-            if (argc > 3) tabela = escolherTabela(argv[3]);
-            p1_alinhar_s_t(cadeia1,cadeia2,NULL,NULL,tabela);
+            if (argc > 3) subst = escolherTabela(argv[3]);
+            p1_alinhar_s_t(cadeia1,cadeia2,NULL,NULL,tab[subst]);
         }
         else
         {
@@ -360,7 +443,8 @@ int main (int argc, char *argv[])
     else
     {
         /* Executa exemplo para depuracao */
-        p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL,pam10);
+        printf("%d",pam10[23][0]);
+        p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL,tab[0]);
     }
     return 0;
 }
