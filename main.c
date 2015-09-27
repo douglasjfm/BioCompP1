@@ -49,7 +49,7 @@
 #define DIR_B 0xB0
 #define DIR_C 0xC0
 
-#define dirmat(a,b,c) ((a > b) ? (a > c ? DIR_A : DIR_C) : (b > c ? DIR_B : DIR_C))
+#define dirmat(a,b,c) ((a >= b) ? (a >= c ? DIR_A : DIR_C) : (b > c ? DIR_B : DIR_C))
 
 #define goUP(x) (x & DIRSUB)
 #define goLF(x) (x & DIRESQ)
@@ -85,27 +85,27 @@ void freemtx(int **m, int i)
 
 int escolherTabela(char *opt)
 {
-    if (strcpy(opt,"pam120") == 0)
+    if (strcmp(opt,"pam120") == 0)
     {
         printf("Tabela: pam120\n");
         return 1;
     }
-    if (strcpy(opt,"pam250") == 0)
+    if (strcmp(opt,"pam250") == 0)
     {
         printf("Tabela: pam250\n");
         return 2;
     }
-    if (strcpy(opt,"blosum30") == 0)
+    if (strcmp(opt,"blosum30") == 0)
     {
         printf("Tabela: blosum30\n");
         return 3;
     }
-    if (strcpy(opt,"blosum62") == 0)
+    if (strcmp(opt,"blosum62") == 0)
     {
         printf("Tabela: blosum62\n");
         return 4;
     }
-    if (strcpy(opt,"blosum90") == 0)
+    if (strcmp(opt,"blosum90") == 0)
     {
         printf("Tabela: blosum90\n");
         return 5;
@@ -286,18 +286,18 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
 
     a[0][0] = 0;
 
-    b[0][0] = piso;
+    b[0][0] = 0;
     for(i = 1; i < mrows; i++)
     {
-        a[i][0] = b[i][0] = piso;
+        a[i][0] = b[i][0] = 0;
         c[i][0] = 0;
     }
 
-    c[0][0] = piso;
+    c[0][0] = 0;
     for(j = 1; j < mcols; j++)
     {
         b[0][j] = 0;
-        a[0][j] = c[0][j] = piso;
+        a[0][j] = c[0][j] = 0;
     }
 
     /* iteracao */
@@ -311,9 +311,12 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     for(x = 1; x < mrows; x++)
         for(y = 1; y < mcols; y++)
         {
-            a[x][y] = tab[getAminCode(s[i]) + 0][getAminCode(t[j]) + 0] + intmax(a[x-1][y-1],intmax(b[x-1][y-1],c[x-1][y-1]));
-            b[x][y] = intmax(intmax(h + g + a[x][y-1], g + b[x][y-1]),h + g + c[x][y-1]);
-            c[x][y] = intmax(intmax(h + g + a[x-1][y], g + c[x-1][y]),h + g + b[x-1][y]);
+            i = y - 1;
+            j = x - 1;
+
+            a[x][y] = intmax(tab[getAminCode(s[i]) + 0][getAminCode(t[j]) + 0] + intmax(a[x-1][y-1],intmax(b[x-1][y-1],c[x-1][y-1])),0);
+            b[x][y] = intmax(intmax(intmax(h + g + a[x][y-1], g + b[x][y-1]),h + g + c[x][y-1]),0);
+            c[x][y] = intmax(intmax(intmax(h + g + a[x-1][y], g + c[x-1][y]),h + g + b[x-1][y]),0);
 
             maxij = intmax(a[x][y],intmax(b[x][y],c[x][y]));
 
@@ -332,9 +335,6 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
                 _int8 mat = dirmat(h + a[x-1][y],h + b[x-1][y],c[x-1][y]);
                 mdir[x][y] = (DIRSUB | mat) & 0xff;
             }
-
-            i = x - 1;
-            j = y - 1;
         }
 
     /*Alocação das strings s e t alinhadas*/
@@ -361,11 +361,10 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     j = (tracem == a) ? ja : (tracem == b ? jb : jc);
 
     x = y = lignlen - 1;
-    score = 0;
+    score = tracem[i][j];
+
     while(tracem[i][j] != 0 && i > 0 && j > 0)
     {
-        score += tracem[i][j];
-
         if (goDG(mdir[i][j]))
         {
             slign[x] = s[j-1];
@@ -405,41 +404,41 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
 
     /*Codigo para imprimir as matrizes m e mdir (mdir: mapa de traceback).*/
 
-    for (i = 0; i < mrows; i++)
-    {
-        for (j = 0; j < mcols; j++)
-        {
-            printf("%03d ", a[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-    for (i = 0; i < mrows; i++)
-    {
-        for (j = 0; j < mcols; j++)
-        {
-            printf("%03d ", b[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-    for (i = 0; i < mrows; i++)
-    {
-        for (j = 0; j < mcols; j++)
-        {
-            printf("%03d ", c[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-    for (i = 0; i < mrows; i++)
-    {
-        for (j = 0; j < mcols; j++)
-        {
-            printf("%02x ", mdir[i][j]);
-        }
-        printf("\n");
-    }
+//    for (i = 0; i < mrows; i++)
+//    {
+//        for (j = 0; j < mcols; j++)
+//        {
+//            printf("%03d ", a[i][j]);
+//        }
+//        printf("\n");
+//    }
+//    printf("\n");
+//    for (i = 0; i < mrows; i++)
+//    {
+//        for (j = 0; j < mcols; j++)
+//        {
+//            printf("%03d ", b[i][j]);
+//        }
+//        printf("\n");
+//    }
+//    printf("\n");
+//    for (i = 0; i < mrows; i++)
+//    {
+//        for (j = 0; j < mcols; j++)
+//        {
+//            printf("%03d ", c[i][j]);
+//        }
+//        printf("\n");
+//    }
+//    printf("\n");
+//    for (i = 0; i < mrows; i++)
+//    {
+//        for (j = 0; j < mcols; j++)
+//        {
+//            printf("%02x ", mdir[i][j]);
+//        }
+//        printf("\n");
+//    }
 
     freemtx(mdir,mrows);
     freemtx(a,mrows);
@@ -482,8 +481,8 @@ int main (int argc, char *argv[])
     else
     {
         /* Executa exemplo para depuracao */
-        //p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL,tab[0]);
-        p1_alinhar_s_t("send","end",NULL,NULL,pam10);
+        p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL,tabela[0]);
+        //p1_alinhar_s_t("send","end",NULL,NULL,pam10);
     }
     return 0;
 }
