@@ -49,6 +49,8 @@
 #define DIR_B 0x40
 #define DIR_C 0x80
 
+#define dirmat(a,b,c) ((a > b) ? (a > c ? DIR_A : DIR_C) : (b > c ? DIR_B : DIR_C))
+
 #define goUP(x) (x & DIRSUB)
 #define goLF(x) (x & DIRESQ)
 #define goDG(x) (x & DIRDIA)
@@ -238,7 +240,7 @@ int maxmtx (int **arr, int m, int n, int* i, int* j)
     *j = 0;
     for (k = 0; k < m; k++)
         for (l = 0; l < n; l++)
-            if (arr[k][l] > bf)
+            if (arr[k][l] >= bf)
             {
                 bf = arr[k][l];
                 *i = k;
@@ -260,9 +262,10 @@ int maxmtx (int **arr, int m, int n, int* i, int* j)
 void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24])
 {
     int slen, tlen, lignlen;
-    int i, j, k, x, y, maxij, diagv, esqv, cimav, globalscr;
-    char dir;
-    int **a, **b, **c, **mdir;
+    int i, j, k, x, y, maxij, h, g;
+    int score, maxa, ia, ja, maxb, ib, jb, maxc, ic, jc;
+    int **a, **b, **c, **tracem;
+    unsigned **mdir;
     char *slign, *tlign;
     int mrows, mcols;
 
@@ -278,39 +281,46 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     a = allocintmtx(mrows,mcols);
     b = allocintmtx(mrows,mcols);
     c = allocintmtx(mrows,mcols);
-    mdir = allocintmtx(mrows,mcols);
+    mdir = (unsigned **)allocintmtx(mrows,mcols);
 
     /* iteracao */
     i = 0; //Indice da cadeia t
     j = 0; //Indice da cadeia s
     k = 0; //Indice para blocos maiores que 1
     x = y = 1; //Indices para as matrizes
+    h = tab[0][23]; //Preco de abertura do gap
+    g = tab[0][23]; //Preco do gap que nao inicia o bloco
 
     while (x < mrows && y < mcols)
     {
         a[x][y] = tab[getAminCode(s[i]) + 0][getAminCode(t[j]) + 0] + intmax(a[x-1][y-1],intmax(b[x-1][y-1],c[x-1][y-1]));
 
-        k = 0;
-        b[x][y] = intmax(a[x][y - k] + gappen(k,tab),c[x][y - k] + gappen(k,tab));
-        for (k = 1; k <= y; k++)
-            if (((a[x][y - k] + gappen(k,tab)) > b[x][y]) || ((c[x][y - k] + gappen(k,tab)) > b[x][y]))
-                b[x][y] = intmax(a[x][y - k],c[x][y - k]);
+        b[x][y] = intmax(intmax(h + g + a[x][y-1], g + b[x][y-1]),h + g + c[x][y-1]);
 
-        k = 0;
-        c[x][y] = intmax(a[x - k][y] + gappen(k,tab),b[x - k][y] + gappen(k,tab));
-        for (k = 1; k <= y; k++)
-            if (((a[x - k][y] + gappen(k,tab)) > c[x][y]) || ((b[x - k][y] + gappen(k,tab)) > c[x][y]))
-                c[x][y] = intmax(a[x - k][y],b[x - k][y]);
+        c[x][y] = intmax(intmax(h + g + a[x-1][y], g + c[x-1][y]),h + g + b[x-1][y]);
 
         maxij = intmax(a[x][y],intmax(b[x][y],c[x][y]));
 
-        if (maxij == a[x][y]) mdir[x][y] = DIR_A;
-        else if (maxij == b[x][y]) mdir[x][y] = DIR_B;
-        else mdir[x][y] = DIR_C;
+        if (maxij == a[x][y])
+        {
+            _int8 mat = dirmat(a[x-1][y-1],b[x-1][y-1],c[x-1][y-1]);
+            mdir[x][y] = (DIRDIA | mat) & 0xff;
+        }
+        else if (maxij == b[x][y])
+        {
+            _int8 mat = dirmat(h + a[x][y-1],b[x][y-1],h + c[x][y-1]);
+            mdir[x][y] = (DIRESQ | mat) & 0xff;
+        }
+        else
+        {
+            _int8 mat = dirmat(h + a[x-1][y],h + b[x-1][y],c[x-1][y]);
+            mdir[x][y] = (DIRSUB | mat) & 0xff;
+        }
 
-        x++;y++;
-        i++;j++;
-
+        x++;
+        y++;
+        i++;
+        j++;
     }
 
     /*Alocação das strings s e t alinhadas*/
@@ -326,81 +336,105 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     slign[lignlen] = '\0';
     tlign[lignlen] = '\0';
 
-    k = lignlen - 1;
-
     /*Traceback*/
 
-    globalscr = 0;
+    maxa = maxmtx(a,mrows,mcols,&ia,&ja);
+    maxb = maxmtx(b,mrows,mcols,&ib,&jb);
+    maxc = maxmtx(c,mrows,mcols,&ic,&jc);
 
-    do
+    tracem = (maxa > maxb) ? (maxa > maxc ? a : c) : (maxb > maxc ? b : c);
+    i = (tracem == a) ? ia : (tracem == b ? ib : ic);
+    j = (tracem == a) ? ja : (tracem == b ? jb : jc);
+
+    x = y = lignlen - 1;
+    score = 0;
+    while(tracem[i][j])
     {
-        dir = mdir[i][j];
-        globalscr += a[i][j];
+        score += tracem[i][j];
 
-        /*Caminha no traceback segundo a prioridade das operacoes*/
-        if (goDG(dir))
+        if (goDG(mdir[i][j]))
         {
-            slign[k] = s[j-1];
-            tlign[k] = t[i-1];
+            slign[x] = s[j-1];
+            tlign[y] = t[i-1];
             i--;
             j--;
-            k--;
+            if (goA(mdir[i][j])) tracem = a;
+            else if (goB(mdir[i][j])) tracem = b;
+            else tracem = c;
         }
-        else if (goLF(dir))
+        else if (goUP(mdir[i][j]))
         {
-            slign[k] = s[j-1];
-            tlign[k] = GAP;
-            j--;
-            k--;
-        }
-        else if (goUP(dir))
-        {
-            slign[k] = GAP;
-            tlign[k] = t[i-1];
+            slign[x] = GAP;
+            tlign[y] = t[i-1];
             i--;
-            k--;
+            if (goA(mdir[i][j])) tracem = a;
+            else if (goB(mdir[i][j])) tracem = b;
+            else tracem = c;
         }
+        else
+        {
+            slign[x] = s[j-1];
+            tlign[y] = GAP;
+            j--;
+            if (goA(mdir[i][j])) tracem = a;
+            else if (goB(mdir[i][j])) tracem = b;
+            else tracem = c;
+        }
+        x--;
+        y--;
     }
-    while(dir);
 
-    if (k+1)
-    {
-        strcpy(slign,slign + k + 1);
-        strcpy(tlign,tlign + k + 1);
-    }
+    strcpy(slign,slign + x + 1);
+    strcpy(tlign,tlign + y + 1);
 
-    printf("\n%s\n%s\nscore: %d\n",slign,tlign,globalscr);
-
-    if (als && alt)
-    {
-        *als = slign;
-        *alt = tlign;
-    }
-    else
-    {
-        free(slign);
-        free(tlign);
-    }
+    printf("%s\n%s\nscore: %d\n",slign,tlign,score);
 
     /*Codigo para imprimir as matrizes m e mdir (mdir: mapa de traceback).*/
 
-//    for (i = 0; i < mrows; i++)
-//    {
-//        for (j = 0; j < mcols; j++)
-//        {
-//            printf("%03d ", m[i][j]);
-//        }
-//        printf("\n");
-//    }
-//    printf("\n");
-//    for (i = 0; i < mrows; i++)
-//    {
-//        for (j = 0; j < mcols; j++)
-//        {
-//            printf("%03d ", mdir[i][j]);
-//        }
-//        printf("\n");
-//    }
+    for (i = 0; i < mrows; i++)
+    {
+        for (j = 0; j < mcols; j++)
+        {
+            printf("%03d ", a[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+    for (i = 0; i < mrows; i++)
+    {
+        for (j = 0; j < mcols; j++)
+        {
+            printf("%03d ", b[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+    for (i = 0; i < mrows; i++)
+    {
+        for (j = 0; j < mcols; j++)
+        {
+            printf("%03d ", c[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+    for (i = 0; i < mrows; i++)
+    {
+        for (j = 0; j < mcols; j++)
+        {
+            printf("%02x ", mdir[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+    for (i = 0; i < 24; i++)
+    {
+        for (j = 0; j < 24; j++)
+        {
+            printf("%02d ", tab[i][j]);
+        }
+        printf("\n");
+    }
 
     freemtx(mdir,mrows);
     freemtx(a,mrows);
@@ -428,7 +462,7 @@ int main (int argc, char *argv[])
             int subst = 0;
             printf("Cadeias OK!\n");
             if (argc > 3) subst = escolherTabela(argv[3]);
-            p1_alinhar_s_t(cadeia1,cadeia2,NULL,NULL,tab[subst]);
+            p1_alinhar_s_t(cadeia1,cadeia2,NULL,NULL,tabela[subst]);
         }
         else
         {
@@ -443,8 +477,8 @@ int main (int argc, char *argv[])
     else
     {
         /* Executa exemplo para depuracao */
-        printf("%d",pam10[23][0]);
-        p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL,tab[0]);
+        //p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL,tab[0]);
+        p1_alinhar_s_t("send","end",NULL,NULL,pam10);
     }
     return 0;
 }
