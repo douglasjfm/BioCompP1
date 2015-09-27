@@ -42,12 +42,12 @@
 
 /*Direções*/
 #define DIRSUB 0x01
-#define DIRESQ 0x02
-#define DIRDIA 0x04
+#define DIRDIA 0x02
+#define DIRESQ 0x04
 
-#define DIR_A 0x20
-#define DIR_B 0x40
-#define DIR_C 0x80
+#define DIR_A 0xA0
+#define DIR_B 0xB0
+#define DIR_C 0xC0
 
 #define dirmat(a,b,c) ((a > b) ? (a > c ? DIR_A : DIR_C) : (b > c ? DIR_B : DIR_C))
 
@@ -60,6 +60,8 @@
 #define goC(x) (x & DIR_C)
 
 #define intmax(a,b) ((a > b) ? a : b)
+
+#define piso -99//0x80000001
 
 int** allocintmtx(int i, int j)
 {
@@ -262,7 +264,7 @@ int maxmtx (int **arr, int m, int n, int* i, int* j)
 void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24])
 {
     int slen, tlen, lignlen;
-    int i, j, k, x, y, maxij, h, g;
+    int i, j, x, y, maxij, h, g;
     int score, maxa, ia, ja, maxb, ib, jb, maxc, ic, jc;
     int **a, **b, **c, **tracem;
     unsigned **mdir;
@@ -270,7 +272,6 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     int mrows, mcols;
 
     /* Alocação e  inicialização das matrizes a,b e c */
-    /* Obs.: calloc() ja inicializa com zero, conveniente para o caso de alinhamento local apenas */
 
     slen = strlen(s);
     tlen = strlen(t);
@@ -283,45 +284,58 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     c = allocintmtx(mrows,mcols);
     mdir = (unsigned **)allocintmtx(mrows,mcols);
 
+    a[0][0] = 0;
+
+    b[0][0] = piso;
+    for(i = 1; i < mrows; i++)
+    {
+        a[i][0] = b[i][0] = piso;
+        c[i][0] = 0;
+    }
+
+    c[0][0] = piso;
+    for(j = 1; j < mcols; j++)
+    {
+        b[0][j] = 0;
+        a[0][j] = c[0][j] = piso;
+    }
+
     /* iteracao */
+
     i = 0; //Indice da cadeia t
     j = 0; //Indice da cadeia s
-    k = 0; //Indice para blocos maiores que 1
     x = y = 1; //Indices para as matrizes
     h = tab[0][23]; //Preco de abertura do gap
-    g = tab[0][23]; //Preco do gap que nao inicia o bloco
+    g = tab[0][23]; //Preco da extensao de gap
 
-    while (x < mrows && y < mcols)
-    {
-        a[x][y] = tab[getAminCode(s[i]) + 0][getAminCode(t[j]) + 0] + intmax(a[x-1][y-1],intmax(b[x-1][y-1],c[x-1][y-1]));
-
-        b[x][y] = intmax(intmax(h + g + a[x][y-1], g + b[x][y-1]),h + g + c[x][y-1]);
-
-        c[x][y] = intmax(intmax(h + g + a[x-1][y], g + c[x-1][y]),h + g + b[x-1][y]);
-
-        maxij = intmax(a[x][y],intmax(b[x][y],c[x][y]));
-
-        if (maxij == a[x][y])
+    for(x = 1; x < mrows; x++)
+        for(y = 1; y < mcols; y++)
         {
-            _int8 mat = dirmat(a[x-1][y-1],b[x-1][y-1],c[x-1][y-1]);
-            mdir[x][y] = (DIRDIA | mat) & 0xff;
-        }
-        else if (maxij == b[x][y])
-        {
-            _int8 mat = dirmat(h + a[x][y-1],b[x][y-1],h + c[x][y-1]);
-            mdir[x][y] = (DIRESQ | mat) & 0xff;
-        }
-        else
-        {
-            _int8 mat = dirmat(h + a[x-1][y],h + b[x-1][y],c[x-1][y]);
-            mdir[x][y] = (DIRSUB | mat) & 0xff;
-        }
+            a[x][y] = tab[getAminCode(s[i]) + 0][getAminCode(t[j]) + 0] + intmax(a[x-1][y-1],intmax(b[x-1][y-1],c[x-1][y-1]));
+            b[x][y] = intmax(intmax(h + g + a[x][y-1], g + b[x][y-1]),h + g + c[x][y-1]);
+            c[x][y] = intmax(intmax(h + g + a[x-1][y], g + c[x-1][y]),h + g + b[x-1][y]);
 
-        x++;
-        y++;
-        i++;
-        j++;
-    }
+            maxij = intmax(a[x][y],intmax(b[x][y],c[x][y]));
+
+            if (maxij == a[x][y])
+            {
+                _int8 mat = dirmat(a[x-1][y-1],b[x-1][y-1],c[x-1][y-1]);
+                mdir[x][y] = (DIRDIA | mat) & 0xff;
+            }
+            else if (maxij == b[x][y])
+            {
+                _int8 mat = dirmat(h + a[x][y-1],b[x][y-1],h + c[x][y-1]);
+                mdir[x][y] = (DIRESQ | mat) & 0xff;
+            }
+            else
+            {
+                _int8 mat = dirmat(h + a[x-1][y],h + b[x-1][y],c[x-1][y]);
+                mdir[x][y] = (DIRSUB | mat) & 0xff;
+            }
+
+            i = x - 1;
+            j = y - 1;
+        }
 
     /*Alocação das strings s e t alinhadas*/
 
@@ -348,7 +362,7 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
 
     x = y = lignlen - 1;
     score = 0;
-    while(tracem[i][j])
+    while(tracem[i][j] != 0 && i > 0 && j > 0)
     {
         score += tracem[i][j];
 
@@ -423,15 +437,6 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
         for (j = 0; j < mcols; j++)
         {
             printf("%02x ", mdir[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-    for (i = 0; i < 24; i++)
-    {
-        for (j = 0; j < 24; j++)
-        {
-            printf("%02d ", tab[i][j]);
         }
         printf("\n");
     }
