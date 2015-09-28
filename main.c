@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "fasta.h"
@@ -32,7 +31,7 @@
         score: -24
 */
 
-#define GAP '-'
+#define GAP '*'
 
 /*Pontuações*/
 #define SCR_M  5
@@ -235,6 +234,15 @@ int p1_valida_cadeia (char *c)
     return 0;
 }
 
+/*!
+    Funcao para encontar o valor maximo em uma matriz
+    @param arr O apontador para a matriz
+    @param m O numero de linhas
+    @param n O numero de colunas
+    @param i Retorna a linha onde o valor maximo foi encontrado
+    @param j Retorna a coluna onde o valor maximo foi encontrado
+    @return O valor maximo da matriz arr
+*/
 int maxmtx (int **arr, int m, int n, int* i, int* j)
 {
     int k,l,bf = 0;
@@ -249,6 +257,28 @@ int maxmtx (int **arr, int m, int n, int* i, int* j)
                 *j = l;
             }
     return bf;
+}
+
+void printAlign (char *s, char *t, int i, int len)
+{
+    int lim = ((i + 50) < len) ? 50 : (len - i);
+    int x;
+
+    printf("<table><tr><td style=\"font-family: courier;\">");
+    for(x = i; x < lim; x++)
+        printf("%c",s[x]);
+    printf("</td></tr>");
+
+    printf("<table><tr><td style=\"font-family: courier;\">");
+    for(x = i; x < lim; x++)
+        if(s[i] == t[i]) printf("|");
+        else printf("#");
+    printf("</td></tr>");
+
+    printf("<table><tr><td style=\"font-family: courier;\">");
+    for(x = i; x < lim; x++)
+        printf("%c",t[x]);
+    printf("</td></tr>");
 }
 
 /*!
@@ -270,6 +300,7 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     unsigned **mdir;
     char *slign, *tlign;
     int mrows, mcols;
+    FILE *fa, *fb, *fc;
 
     /* Alocação e  inicialização das matrizes a,b e c */
 
@@ -363,6 +394,8 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     x = y = lignlen - 1;
     score = tracem[i][j];
 
+    lignlen = 0;
+
     while(tracem[i][j] != 0 && i > 0 && j > 0)
     {
         if (goDG(mdir[i][j]))
@@ -393,6 +426,7 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
             else if (goB(mdir[i][j])) tracem = b;
             else tracem = c;
         }
+        lignlen++;
         x--;
         y--;
     }
@@ -400,43 +434,45 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     strcpy(slign,slign + x + 1);
     strcpy(tlign,tlign + y + 1);
 
-    printf("%s\n%s\nscore: %d\n",slign,tlign,score);
+    for(i = 0; i < lignlen; )
 
-    /*Codigo para imprimir as matrizes m e mdir (mdir: mapa de traceback).*/
+    fa = fopen("A.html","w");
+    fb = fopen("B.html","w");
+    fc = fopen("C.html","w");
 
-    x = mrows;// Para desalocar as matrizes
+    /*Codigo para imprimir as matrizes.*/
 
-    if (mrows > 18 && mcols > 18)
-        mrows = mcols = 18;
-
-    printf("Matriz a:\n");
+    fprintf(fa,"<br/>Matriz a:\n<table>");
     for (i = 0; i < mrows; i++)
     {
+        fprintf(fa,"<tr>");
         for (j = 0; j < mcols; j++)
         {
-            printf("%03d ", a[i][j]);
+            fprintf(fa,"<td>%03d</td>", a[i][j]);
         }
-        printf("\n");
+        fprintf(fa,"</tr>\n");
     }
-    printf("\nMatriz b:\n");
+    fprintf(fb,"</table>\nMatriz b:\n<table>");
     for (i = 0; i < mrows; i++)
     {
+        fprintf(fb,"<tr>");
         for (j = 0; j < mcols; j++)
         {
-            printf("%03d ", b[i][j]);
+            fprintf(fb,"<td>%03d</td>", b[i][j]);
         }
-        printf("\n");
+        fprintf(fb,"</tr>\n");
     }
-    printf("\nMatriz c:\n");
+    fprintf(fc,"</table>\nMatriz c:\n<table>");
     for (i = 0; i < mrows; i++)
     {
+        fprintf(fc,"<tr>");
         for (j = 0; j < mcols; j++)
         {
-            printf("%03d ", c[i][j]);
+            fprintf(fc,"<td>%03d</td>", c[i][j]);
         }
-        printf("\n");
+        fprintf(fc,"</tr>\n");
     }
-//    printf("\n");
+    fprintf(fc,"</table>\n");
 //    for (i = 0; i < mrows; i++)
 //    {
 //        for (j = 0; j < mcols; j++)
@@ -446,10 +482,14 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
 //        printf("\n");
 //    }
 
-    freemtx(mdir,x);
-    freemtx(a,x);
-    freemtx(b,x);
-    freemtx(c,x);
+    fclose(fa);
+    fclose(fb);
+    fclose(fc);
+
+    freemtx(mdir,mrows);
+    freemtx(a,mrows);
+    freemtx(b,mrows);
+    freemtx(c,mrows);
 }
 
 int main (int argc, char *argv[])
@@ -466,17 +506,17 @@ int main (int argc, char *argv[])
         lerFasta(fasta1,&cadeia1,NULL,&len1);
         lerFasta(fasta2,&cadeia2,NULL,&len2);
 
-        printf("P1 Console\n");
+        printf("<html>|P1 Console|\n");
         if (p1_valida_cadeia(cadeia1) && p1_valida_cadeia(cadeia2))
         {
             int subst = 0;
-            printf("Cadeias OK!\n");
+            printf("|Cadeias OK!|\n");
             if (argc > 3) subst = escolherTabela(argv[3]);
             p1_alinhar_s_t(cadeia1,cadeia2,NULL,NULL,tabela[subst]);
         }
         else
         {
-            printf("Cadeias Invalidas!\n");
+            printf("Cadeias Invalidas!\n</html>");
         }
 
         encerraFasta(fasta1);
@@ -490,5 +530,6 @@ int main (int argc, char *argv[])
         p1_alinhar_s_t("atggcatatcccatacaactaggattccaagatgcaacatcaccaatcatagaaga","cacttcatcaagaagatactaaccactacaacgtagaaccttagga",NULL,NULL,tabela[0]);
         //p1_alinhar_s_t("send","end",NULL,NULL,pam10);
     }
+    printf("</html>");
     return 0;
 }
