@@ -13,7 +13,7 @@
         comando:
             ./P1 <cadeia 1> <cadeia 2> <tabela>
             Onde <tabela> pode ser pam10 (default), pam120, pam250, blosum30, blosum62, blosum90;
-        saÃ­da:
+        saída:
             P1 Console <\Nova Linha>
             Cadeias OK! <\Nova Linha>
             <\Nova Linha>
@@ -34,13 +34,13 @@
 
 #define GAP '-'
 
-/*PontuaÃ§Ãµes*/
+/*Pontuações*/
 #define SCR_M  5
 #define SCR_S -1
 #define SCR_R -6
 #define SCR_I -8
 
-/*DireÃ§Ãµes*/
+/*Direções*/
 #define DIRSUB 0x01
 #define DIRDIA 0x02
 #define DIRESQ 0x04
@@ -126,9 +126,9 @@ int gappen (int k, _int8 tab[24][24])
 }
 
 /*!
-    FunÃ§Ã£o para mapear os caracteres que representam os aminoacidos nos valores do tipo enumeracao Aminoacidos_t
+    Função para mapear os caracteres que representam os aminoacidos nos valores do tipo enumeracao Aminoacidos_t
     @param a Caracter representando um aminoacido, espera-se que seja minusculo
-    @return Aminoacido_t valor da enumeraÃ§Ã£o correspondente
+    @return Aminoacido_t valor da enumeração correspondente
 */
 Aminoacidos_t getAminCode (char a)
 {
@@ -212,9 +212,9 @@ Aminoacidos_t getAminCode (char a)
 }
 
 /*!
-    FunÃ§Ã£o para validar se a cadeia c contem apenas os caracteres representando os aminoacidos em minusculo
+    Função para validar se a cadeia c contem apenas os caracteres representando os aminoacidos em minusculo
     @param c Ponteiro para a cadeia a ser validada
-    @return um se a cadeia Ã© vÃ¡lida, zero se nÃ£o
+    @return um se a cadeia é válida, zero se não
 */
 int p1_valida_cadeia (char *c)
 {
@@ -252,7 +252,7 @@ int maxmtx (int **arr, int m, int n, int* i, int* j)
 }
 
 /*!
-    FunÃ§Ã£o para encontrar o melhor alinhamento local entre as cadeias s e t,
+    Função para encontrar o melhor alinhamento local entre as cadeias s e t,
     dado que s e t sejam cadeias validas de aminoacidos.
 
     @param s ponteiro para a cadeia s
@@ -271,7 +271,7 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     char *slign, *tlign;
     int mrows, mcols;
 
-    /* AlocaÃ§Ã£o e  inicializaÃ§Ã£o das matrizes a,b e c */
+    /* Alocação e  inicialização das matrizes a,b e c */
 
     slen = strlen(s);
     tlen = strlen(t);
@@ -337,7 +337,7 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
             }
         }
 
-    /*AlocaÃ§Ã£o das strings s e t alinhadas*/
+    /*Alocação das strings s e t alinhadas*/
 
     lignlen = mrows + mcols;
 
@@ -404,32 +404,38 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
 
     /*Codigo para imprimir as matrizes m e mdir (mdir: mapa de traceback).*/
 
-//    for (i = 0; i < mrows; i++)
-//    {
-//        for (j = 0; j < mcols; j++)
-//        {
-//            printf("%03d ", a[i][j]);
-//        }
-//        printf("\n");
-//    }
-//    printf("\n");
-//    for (i = 0; i < mrows; i++)
-//    {
-//        for (j = 0; j < mcols; j++)
-//        {
-//            printf("%03d ", b[i][j]);
-//        }
-//        printf("\n");
-//    }
-//    printf("\n");
-//    for (i = 0; i < mrows; i++)
-//    {
-//        for (j = 0; j < mcols; j++)
-//        {
-//            printf("%03d ", c[i][j]);
-//        }
-//        printf("\n");
-//    }
+    x = mrows;// Para desalocar as matrizes
+
+    if (mrows > 18 && mcols > 18)
+        mrows = mcols = 18;
+
+    printf("Matriz a:\n");
+    for (i = 0; i < mrows; i++)
+    {
+        for (j = 0; j < mcols; j++)
+        {
+            printf("%03d ", a[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\nMatriz b:\n");
+    for (i = 0; i < mrows; i++)
+    {
+        for (j = 0; j < mcols; j++)
+        {
+            printf("%03d ", b[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\nMatriz c:\n");
+    for (i = 0; i < mrows; i++)
+    {
+        for (j = 0; j < mcols; j++)
+        {
+            printf("%03d ", c[i][j]);
+        }
+        printf("\n");
+    }
 //    printf("\n");
 //    for (i = 0; i < mrows; i++)
 //    {
@@ -440,10 +446,10 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
 //        printf("\n");
 //    }
 
-    freemtx(mdir,mrows);
-    freemtx(a,mrows);
-    freemtx(b,mrows);
-    freemtx(c,mrows);
+    freemtx(mdir,x);
+    freemtx(a,x);
+    freemtx(b,x);
+    freemtx(c,x);
 }
 
 int main (int argc, char *argv[])
