@@ -259,26 +259,38 @@ int maxmtx (int **arr, int m, int n, int* i, int* j)
     return bf;
 }
 
-void printAlign (char *s, char *t, int i, int len)
+void printAlign (char *s, char *t, int i, int len, int ls, int lt, int *perfs)
 {
-    int lim = ((i + 50) < len) ? 50 : (len - i);
+    int lim = ((i + 50) < len) ? (i + 50) : len;
     int x;
+    char indexs[70] = "";
+    char indext[70] = "";
 
-    printf("<table><tr><td style=\"font-family: courier;\">");
+    if (!i)
+    {
+        sprintf(indexs, "<tr><td style=\"font-family: courier;\">%d</td><tr>", ls);
+        sprintf(indext, "<tr><td style=\"font-family: courier;\">%d</td><tr>", lt);
+    }
+
+    printf("<table>%s<tr><td style=\"font-family: courier;\">",indexs);
     for(x = i; x < lim; x++)
         printf("%c",s[x]);
     printf("</td></tr>");
 
-    printf("<table><tr><td style=\"font-family: courier;\">");
+    printf("<tr><td style=\"font-family: courier;\">");
     for(x = i; x < lim; x++)
-        if(s[i] == t[i]) printf("|");
+        if(s[x] == t[x])
+        {
+            *perfs += 1;
+            printf("|");
+        }
         else printf("#");
     printf("</td></tr>");
 
-    printf("<table><tr><td style=\"font-family: courier;\">");
+    printf("<tr><td style=\"font-family: courier;\">");
     for(x = i; x < lim; x++)
         printf("%c",t[x]);
-    printf("</td></tr>");
+    printf("</td></tr>%s</table>",indext);
 }
 
 /*!
@@ -294,7 +306,7 @@ void printAlign (char *s, char *t, int i, int len)
 void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24])
 {
     int slen, tlen, lignlen;
-    int i, j, x, y, maxij, h, g;
+    int i, j, x, y, maxij, h, g, tlocal, slocal;
     int score, maxa, ia, ja, maxb, ib, jb, maxc, ic, jc;
     int **a, **b, **c, **tracem;
     unsigned **mdir;
@@ -398,6 +410,9 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
 
     while(tracem[i][j] != 0 && i > 0 && j > 0)
     {
+        tlocal = i - 1;
+        slocal = j - 1;
+
         if (goDG(mdir[i][j]))
         {
             slign[x] = s[j-1];
@@ -434,13 +449,17 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     strcpy(slign,slign + x + 1);
     strcpy(tlign,tlign + y + 1);
 
-    for(i = 0; i < lignlen; )
+    j = 0;
+    for(i = 0; i < lignlen; i += 50)
+        printAlign(slign,tlign,i,lignlen,slocal,tlocal,&j);
 
-    fa = fopen("A.html","w");
-    fb = fopen("B.html","w");
-    fc = fopen("C.html","w");
+    printf("<p>Score: %d</p><p>Comprimento: %d</p><p>% Matches perfeitos: %f",score,lignlen,(float)j/lignlen);
 
     /*Codigo para imprimir as matrizes.*/
+    fa = fopen("djfm_Matriz_A.html","w");
+    fb = fopen("djfm_Matriz_B.html","w");
+    fc = fopen("djfm_Matriz_C.html","w");
+
 
     fprintf(fa,"<br/>Matriz a:\n<table>");
     for (i = 0; i < mrows; i++)
@@ -506,11 +525,11 @@ int main (int argc, char *argv[])
         lerFasta(fasta1,&cadeia1,NULL,&len1);
         lerFasta(fasta2,&cadeia2,NULL,&len2);
 
-        printf("<html>|P1 Console|\n");
+        printf("<html><p>P1 Console</p>\n");
         if (p1_valida_cadeia(cadeia1) && p1_valida_cadeia(cadeia2))
         {
             int subst = 0;
-            printf("|Cadeias OK!|\n");
+            printf("<p>Cadeias OK!</p>\n");
             if (argc > 3) subst = escolherTabela(argv[3]);
             p1_alinhar_s_t(cadeia1,cadeia2,NULL,NULL,tabela[subst]);
         }
