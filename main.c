@@ -453,7 +453,7 @@ void p1_alinhar_s_t (char *s, char *t, char **als, char **alt, _int8 tab[24][24]
     for(i = 0; i < lignlen; i += 50)
         printAlign(slign,tlign,i,lignlen,slocal,tlocal,&j);
 
-    printf("<p>Score: %d</p><p>Comprimento: %d</p><p>% Matches perfeitos: %f",score,lignlen,(float)j/lignlen);
+    printf("<p>Score: %d</p><p>Comprimento: %d</p><p>%% Matches perfeitos: %f",score,lignlen,(float)j/lignlen);
 
     /*Codigo para imprimir as matrizes.*/
     fa = fopen("djfm_Matriz_A.html","w");
