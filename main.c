@@ -8,8 +8,8 @@ typedef struct Arvore
 	unsigned o;
 	unsigned o2;
 	unsigned p;
-	struct Arvore e;
-	struct Arvore d;
+	struct Arvore *e;
+	struct Arvore *d;
 }Arvore;
 
 typedef struct Conjunto
@@ -18,6 +18,24 @@ typedef struct Conjunto
 	unsigned rnk;
 	struct Conjunto *r;
 }Conjunto;
+
+typedef struct Altura
+{
+	unsigned o1;
+	unsigned o2;
+	float alt;
+}Altura;
+
+typedef struct AU
+{
+	unsigned o1;
+	unsigned o2;
+	float alt;
+	float pe;
+	float pd;
+	struct AU *e;
+	struct AU *d;
+}AU;
 
 /*
 	Lista encadeada para a arvore geradora de peso minimo
@@ -50,8 +68,8 @@ void troca(heap* a, heap* b)
 void heapify(heap* q, int i, int n)
 {
 	int l = 2 * i + 1, r = 2 * (i + 1), menor = i;
-	if (l<n && q[l].d < q[i].d) menor = l;
-	if (r<n && q[r].d < q[menor].d) menor = r;
+	if (l<n && q[l].d > q[i].d) menor = l;
+	if (r<n && q[r].d > q[menor].d) menor = r;
 	if (menor != i)
 	{
 		troca(q + i, q + menor);
@@ -62,6 +80,25 @@ void buildheap(heap* vt, int n)
 {
 	int i;
 	for (i = (n - 1) / 2; i >= 0; i--) heapify(vt, i, n);
+}
+
+void heapsort(heap *vt, int n, int *h)
+{
+	int i;
+	buildheap(vt, n);
+	for (i = n - 1; i >= 0; i--) {
+		heap aux;
+		aux.d = vt[0].d;
+		aux.v[0] = vt[0].v[0];
+		aux.v[1] = vt[0].v[1];
+		vt[0].d = vt[i].d;
+		vt[0].v[0] = vt[i].v[0];
+		vt[0].v[1] = vt[i].v[1];
+		vt[i].d = aux.d;
+		vt[i].v[0] = aux.v[0];
+		vt[i].v[1] = aux.v[1];
+		heapify(vt, 0, i);
+	}
 }
 
 char **charquadmtx(unsigned n)
@@ -130,6 +167,7 @@ MST* criamst(char** g, unsigned n)
 {
 	MST *T = NULL;
 	heap *ordem;
+	int tamheap;
 	unsigned i, j, k = 0;
 
 	ordem = (heap *)calloc((n*n - n)/2,sizeof(heap));
@@ -143,8 +181,8 @@ MST* criamst(char** g, unsigned n)
 				ordem[k].v[1] = j;
 				k++;
 			}
-
-	buildheap(ordem, (n*n - n) / 2);
+	tamheap = 0;
+	heapsort(ordem, (n*n - n) / 2, &tamheap);
 
 	k = (n*n - n) / 2;
 	for (i = 0; i < k; i++)
@@ -199,7 +237,7 @@ void iniciaFloresta(Conjunto **f, unsigned n)
 
 Arvore* criaR(MST *T, Conjunto **conjuntos, unsigned n)
 {
-	Arvore **folhas;
+	Arvore **folhas, *R;
 	MST *aresta = T;
 	unsigned i;
 
@@ -225,17 +263,18 @@ Arvore* criaR(MST *T, Conjunto **conjuntos, unsigned n)
 			rb = folhas[B->o];
 			r = (Arvore*)calloc(1, sizeof(Arvore));
 			r->o = aresta->o1;
-			r->o2 = aresta->o1;
+			r->o2 = aresta->o2;
 			r->p = aresta->p;
 			r->e = ra;
 			r->d = rb;
 			unionSet(A, B);
 			folhas[aresta->o1] = r;
 			folhas[aresta->o2] = r;
+			R = r;
 		}
 		aresta = aresta->prx;
 	}
-	return folhas[0];
+	return R;
 }
 
 Arvore* lca(Arvore ***caminhos, unsigned o1, unsigned o2)
@@ -307,24 +346,22 @@ unsigned** calcCW(char **L, MST *T, Arvore *R, unsigned n)
 
 Arvore* criaU(Arvore *R, heap *T, unsigned **CW, unsigned n)
 {
-	Arvore *U;
 	Conjunto **floresta;
-	Arvore **folhas;
+	AU **folhas;
 	unsigned i, na = n - 1;
-	float *height;
 
 	floresta = (Conjunto**)calloc(n,sizeof(Conjunto*));
-	folhas = (Arvore**)calloc(n, sizeof(Arvore*));
-	height = (float*)calloc(n, sizeof(float));
+	folhas = (AU**)calloc(n, sizeof(AU*));
 	iniciaFloresta(floresta, n);
 	for (i = 0; i < n; i++)
 	{
 		folhas[i] = (Arvore*)calloc(1, sizeof(Arvore));
-		folhas[i]->o = i;
+		folhas[i]->o1 = i;
 		folhas[i]->o2 = i;
-		folhas[i]->p = 0;
+		folhas[i]->alt = 0;
+		folhas[i]->pd = 0;
+		folhas[i]->pe = 0;
 		folhas[i]->e = folhas[i]->d = NULL;
-		height[i] = 0;
 	}
 	for (i = 0; i < na; i++)
 	{
@@ -333,11 +370,19 @@ Arvore* criaU(Arvore *R, heap *T, unsigned **CW, unsigned n)
 
 		if (A != B)
 		{
-			Arvore *ua = folhas[A->o], *ub = folhas[B->o];
-			Arvore *u = (Arvore*)malloc(sizeof(Arvore));
-
+			AU *ua = folhas[A->o], *ub = folhas[B->o];
+			AU *u = (Arvore*)malloc(sizeof(Arvore));
+			u->e = ua;
+			u->d = ub;
+			u->alt = CW[T[i].v[0]][T[i].v[1]] / 2;
+			u->pe = u->alt - ua->alt;
+			u->pd = u->alt - ub->alt;
+			folhas[A->o] = u;
+			folhas[B->o] = u;
+			unionSet(A, B);
 		}
 	}
+	return folhas[0];
 }
 
 int main(int argc, char *argv[])
