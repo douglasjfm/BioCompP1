@@ -12,6 +12,16 @@ typedef struct Arvore
 	struct Arvore *d;
 }Arvore;
 
+void free_r(Arvore *r)
+{
+    Arvore *dd;
+    if (!r)return;
+    free_r(r->e);
+    dd = r->d;
+    free(r);
+    free_r(dd);
+}
+
 typedef struct Conjunto
 {
 	unsigned o;
@@ -37,6 +47,16 @@ typedef struct AU
 	struct AU *d;
 }AU;
 
+void free_au(AU *r)
+{
+    AU *dd;
+    if (!r)return;
+    free_au(r->e);
+    dd = r->d;
+    free(r);
+    free_au(dd);
+}
+
 /*
 	Lista encadeada para a arvore geradora de peso minimo
 */
@@ -51,8 +71,8 @@ typedef struct MST
 
 typedef struct heap
 {
-	int d;
-	int v[2];
+	unsigned d;
+	unsigned v[2];
 }heap;
 
 void troca(heap* a, heap* b)
@@ -82,7 +102,7 @@ void buildheap(heap* vt, int n)
 	for (i = (n - 1) / 2; i >= 0; i--) heapify(vt, i, n);
 }
 
-void heapsort(heap *vt, int n, int *h)
+void heapsort(heap *vt, unsigned n, unsigned *h)
 {
 	int i;
 	buildheap(vt, n);
@@ -101,15 +121,15 @@ void heapsort(heap *vt, int n, int *h)
 	}
 }
 
-int **intquadmtx(unsigned n)
+unsigned **intquadmtx(unsigned n)
 {
-	int **m;
+	unsigned **m;
 	unsigned i;
 
-	m = (int **) malloc(n * sizeof(int*));
+	m = (unsigned **) malloc(n * sizeof(unsigned*));
 
 	for (i = 0; i < n; i++)
-		m[i] = (int *) calloc(n,sizeof(int));
+		m[i] = (unsigned *) calloc(n,sizeof(unsigned));
 
 	return m;
 }
@@ -141,38 +161,24 @@ MST* insmst(MST *h, unsigned i, unsigned j, unsigned p)
 	return h;
 }
 
-int conectada(int v[2], MST *T)
-{
-	int con1, con2;
-	
-	if (!T)
-		return 0;
+Conjunto* makeSet(unsigned x);
+void unionSet(Conjunto *a, Conjunto *b);
+Conjunto* findSet(Conjunto *c);
 
-	con1 = con2 = 0;
-	while (T && (!con1 || !con2))
-	{
-		if (T->o1 == v[0] || T->o2 == v[0])
-			con1 = 1;
-		if (T->o1 == v[1] || T->o2 == v[1])
-			con2 = 1;
-		T = T->prx;
-	}
-
-	if (con1 && con2)
-		return 1;
-	return 0;
-}
-
-MST* criamst(int** g, unsigned n)
+MST* criamst(unsigned** g, unsigned n)
 {
 	MST *T = NULL;
 	heap *ordem;
-	int tamheap;
+	unsigned tamheap;
+	Conjunto **floresta;
 	unsigned i, j, k = 0;
 
+    floresta = (Conjunto**) calloc(n,sizeof(Conjunto*));
 	ordem = (heap *)calloc((n*n - n)/2,sizeof(heap));
 
 	for (i = 0; i < n; i++)
+    {
+        floresta[i] = makeSet(i);
 		for (j = i; j < n; j++)
 			if (i != j)
 			{
@@ -181,13 +187,20 @@ MST* criamst(int** g, unsigned n)
 				ordem[k].v[1] = j;
 				k++;
 			}
+    }
 	tamheap = 0;
 	heapsort(ordem, (n*n - n) / 2, &tamheap);
 
 	k = (n*n - n) / 2;
 	for (i = 0; i < k; i++)
-		if (!conectada(ordem[i].v,T))
+    {
+        Conjunto *u = floresta[ordem[i].v[0]], *v = floresta[ordem[i].v[1]];
+		if (findSet(u) != findSet(v))
+        {
 			T = insmst(T, ordem[i].v[0], ordem[i].v[1], ordem[i].d);
+			unionSet(u,v);
+        }
+    }
 
 	free(ordem);
 	return T;
@@ -216,7 +229,7 @@ void unionSet(Conjunto *a, Conjunto *b)
 
 	la = findSet(a);
 	lb = findSet(b);
-	
+
 	if (lb->rnk > la->rnk)
 	{
 		la->r = lb;
@@ -306,7 +319,7 @@ Arvore* lca(Arvore ***caminhos, unsigned o1, unsigned o2)
 	return lca;
 }
 
-void preOrd(Arvore *r, Arvore ***caminhos, Arvore **cam, int l)
+void preOrd(Arvore *r, Arvore ***caminhos, Arvore **cam, unsigned l)
 {
 	cam[l] = r;
 	if (!r->e && !r->d)
@@ -320,11 +333,10 @@ void preOrd(Arvore *r, Arvore ***caminhos, Arvore **cam, int l)
 	preOrd(r->d, caminhos, cam, l + 1);
 }
 
-unsigned** calcCW(int **L, MST *T, Arvore *R, unsigned n)
+unsigned** calcCW(unsigned **L, MST *T, Arvore *R, unsigned n)
 {
 	Arvore ***caminhos, **cam;
-	unsigned i,h = log2(n) + 1;
-	MST *aux = T;
+	unsigned i,h = (log((float)n)/log(2.0)) + 1;
 	unsigned **CW;
 
 	caminhos = (Arvore***)calloc(n,sizeof(Arvore**));
@@ -344,17 +356,21 @@ unsigned** calcCW(int **L, MST *T, Arvore *R, unsigned n)
 		for (h = i; h < n; h++)
 			CW[i][h] = 0;
 
+	printf("LCA (vX/vY: vA-vB, i. e., para cada par de obj vX/vY vA-vB representa um nó interno de R que é o LCA)\n");
+
 	for (i = 0; i < n; i++)
 		for (h = i; h < n; h++)
 		{
 			if (i != h)
 			{
 				Arvore *e = lca(caminhos, i, h);
+				printf("v%u/v%u: v%u-v%u\n",i,h,e->o,e->o2);
 				if (L[i][h] > CW[e->o][e->o2])
 					CW[e->o][e->o2] = L[i][h];
 			}
 		}
 
+	printf("\n");
 	return CW;
 }
 
@@ -372,7 +388,7 @@ void atualizaArvoreU(AU *t, AU **folhas, AU *root)
 	}
 }
 
-Arvore* criaU(Arvore *R, heap *T, unsigned **CW, unsigned n)
+AU* criaU(Arvore *R, heap *T, unsigned **CW, unsigned n)
 {
 	Conjunto **floresta;
 	AU **folhas;
@@ -383,7 +399,7 @@ Arvore* criaU(Arvore *R, heap *T, unsigned **CW, unsigned n)
 	iniciaFloresta(floresta, n);
 	for (i = 0; i < n; i++)
 	{
-		folhas[i] = (Arvore*)calloc(1, sizeof(Arvore));
+		folhas[i] = (AU*)calloc(1, sizeof(AU));
 		folhas[i]->o1 = i;
 		folhas[i]->o2 = i;
 		folhas[i]->alt = 0;
@@ -399,12 +415,12 @@ Arvore* criaU(Arvore *R, heap *T, unsigned **CW, unsigned n)
 		if (A != B)
 		{
 			AU *ua = folhas[A->o], *ub = folhas[B->o];
-			AU *u = (Arvore*)malloc(sizeof(Arvore));
+			AU *u = (AU*)malloc(sizeof(AU));
 			u->o1 = T[i].v[0];
 			u->o2 = T[i].v[1];
 			u->e = ua;
 			u->d = ub;
-			u->alt = (float) (CW[T[i].v[0]][T[i].v[1]] / 2);
+			u->alt = (float) ((float)(CW[T[i].v[0]][T[i].v[1]]) / (float)(2));
 			u->pe = u->alt - ua->alt;
 			u->pd = u->alt - ub->alt;
 			atualizaArvoreU(u, folhas, u);
@@ -448,14 +464,17 @@ void printu(AU *u)
 {
 	if (!u)return;
 	printu(u->e);
-	printf("v%u-v%u:%.02f:%.02f ",u->o1,u->o2,u->pe,u->pd);
+	if (u->o1 != u->o2)
+		printf("v%u-v%u:%.02f:%.02f ",u->o1,u->o2,u->pe,u->pd);
+	else
+		printf("v%u ",u->o1);
 	printu(u->d);
 }
 
 int main(int argc, char *argv[])
 {
 	char fname[100];
-	int **H, **L;
+	unsigned **H, **L;
 	unsigned n, i, j, **CW;
 	MST *T;
 	Conjunto **floresta;
@@ -479,17 +498,18 @@ int main(int argc, char *argv[])
 
 		for (i = 0; i < n; i++)
 			for (j = 0; j < n; j++)
-				scanf("%d", (L[i]) + j);
+				scanf("%u", (L[i]) + j);
 		for (i = 0; i < n; i++)
 			for (j = 0; j < n; j++)
-			{
-				scanf("%d", (H[i]) + j);
-				if (H[i][j] < L[i][j])
+                scanf("%u", (H[i]) + j);
+
+        for (i = 0; i < n; i++)
+            for (j = i; j < n; j++)
+            if (H[i][j] < L[i][j])
 				{
 					printf("Não é possível calcular uma árvore ultramétrica obedecendo aos limites dados.\n");
 					return 0x2;
 				}
-			}
 
 		printf("N = %u\n\n", n);
 
@@ -505,7 +525,7 @@ int main(int argc, char *argv[])
 
 		printf("Arvore R em pre ordem:\n");
 		printr(R);
-		printf("\n");
+		printf("\n\n");
 
 		/*Cut-weight*/
 		CW = calcCW(L, T, R, n);
@@ -530,20 +550,28 @@ int main(int argc, char *argv[])
 		/*Criacao de U*/
 		U = criaU(R, T2, CW, n);
 
-		printf("\nArvore Ultrametrica U, em pre ordem (aresta:pesoEsq:pesoDir):\n");
+		printf("\nArvore Ultrametrica U, em pre ordem (folha: vX. Nó interno: vX-vY:pesoEsq:pesoDir):\n");
 		printu(U);
 
 		/*Fim*/
+		free(T2);
+		free_r(R);
+		free_au(U);
+
 		for (i = 0; i < n; i++)
 		{
 			free(L[i]);
 			free(H[i]);
+			free(CW[i]);
+			free(floresta[i]);
 		}
 
 		free(L);
 		free(H);
+		free(CW);
+		free(floresta);
 
-		printf("\n\n");
+		printf("\n\n***********************************************************************************\n\n");
 	}
 
 	fclose(stdin);
