@@ -3,6 +3,8 @@
 #include <string.h>
 #include <math.h>
 
+#define MAX(a,b) (b > a ? b : a)
+
 typedef struct Arvore
 {
 	unsigned o;
@@ -475,7 +477,7 @@ int main(int argc, char *argv[])
 {
 	char fname[100];
 	unsigned **H, **L;
-	unsigned n, i, j, **CW;
+	unsigned n, i, j, **CW, k;
 	MST *T;
 	Conjunto **floresta;
 	Arvore *R;
@@ -493,6 +495,7 @@ int main(int argc, char *argv[])
 
 	while (scanf("%u", &n) == 1) {
 
+		unsigned err = 0;
 		H = intquadmtx(n);
 		L = intquadmtx(n);
 
@@ -505,11 +508,24 @@ int main(int argc, char *argv[])
 
         for (i = 0; i < n; i++)
             for (j = i; j < n; j++)
-            if (H[i][j] < L[i][j])
+			{
+				if (H[i][j] < L[i][j])
+					err++;
+				/*if (i != j)
 				{
-					printf("Não é possível calcular uma árvore ultramétrica obedecendo aos limites dados.\n");
-					return 0x2;
-				}
+					for (k = 0; k < n; k++)
+					{
+						if (H[i][j] > MAX(H[i][k],H[j][k]))
+							err++;
+					}
+				}*/
+			}
+
+		if (err)
+		{
+			printf("Não é possível calcular uma árvore ultramétrica obedecendo aos limites dados.\n\n");
+			continue;
+		}
 
 		printf("N = %u\n\n", n);
 
@@ -533,7 +549,7 @@ int main(int argc, char *argv[])
 		printcw(CW, T);
 
 		/*Construcao U*/
-		T2 = (heap*)calloc(n - 1, sizeof(heap));
+		T2 = (heap*)malloc((n - 1) * sizeof(heap));
 		i = 0;
 		while (T)
 		{
