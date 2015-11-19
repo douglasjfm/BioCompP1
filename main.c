@@ -511,14 +511,6 @@ int main(int argc, char *argv[])
 			{
 				if (H[i][j] < L[i][j])
 					err++;
-				/*if (i != j)
-				{
-					for (k = 0; k < n; k++)
-					{
-						if (H[i][j] > MAX(H[i][k],H[j][k]))
-							err++;
-					}
-				}*/
 			}
 
 		if (err)
