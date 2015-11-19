@@ -444,12 +444,12 @@ void printmst(MST *t)
 	printf("\n");
 }
 
-void printr(Arvore *r)
+void printr(Arvore *r, unsigned a)
 {
 	if (!r) return;
-	printr(r->e);
-	printf("v%d-v%d ",r->o,r->o2);
-	printr(r->d);
+	printr(r->e,a+1);
+	printf("(%u)v%d-v%d ",a,r->o,r->o2);
+	printr(r->d,a+1);
 }
 
 void printcw(unsigned **cw, MST *T)
@@ -462,15 +462,15 @@ void printcw(unsigned **cw, MST *T)
 	}
 }
 
-void printu(AU *u)
+void printu(AU *u, unsigned a)
 {
 	if (!u)return;
-	printu(u->e);
+	printu(u->e,a+1);
 	if (u->o1 != u->o2)
-		printf("v%u-v%u:%.02f:%.02f ",u->o1,u->o2,u->pe,u->pd);
+		printf("(%d)v%u-v%u:%.02f:%.02f ",a,u->o1,u->o2,u->pe,u->pd);
 	else
-		printf("v%u ",u->o1);
-	printu(u->d);
+		printf("(%d)v%u ",a,u->o1);
+	printu(u->d,a+1);
 }
 
 int main(int argc, char *argv[])
@@ -532,7 +532,7 @@ int main(int argc, char *argv[])
 		R = criaR(T, floresta, n);
 
 		printf("Arvore R em pre ordem:\n");
-		printr(R);
+		printr(R,0);
 		printf("\n\n");
 
 		/*Cut-weight*/
@@ -559,7 +559,7 @@ int main(int argc, char *argv[])
 		U = criaU(R, T2, CW, n);
 
 		printf("\nArvore Ultrametrica U, em pre ordem (folha: vX. Nó interno: vX-vY:pesoEsq:pesoDir):\n");
-		printu(U);
+		printu(U,0);
 
 		/*Fim*/
 		free(T2);
